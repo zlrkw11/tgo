@@ -1,0 +1,17 @@
+# Binary
+tgo
+tgo-bin
+*.exe
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Go
+dist/

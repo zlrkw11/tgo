@@ -43,24 +43,9 @@
 - **进度条** — 一眼看清通过/失败比例
 - **精美 UI** — 圆角边框、彩色状态图标、高亮光标
 
-```
-╭──────────────────────────────────────────────────────────╮
-│                         ⚡ TGO                            │
-│                  TEST UI built for Go                    │
-│                                                          │
-│  3 tests  ████████████████░░░░  2 passed  1 failed       │
-│  ────────────────────────────────────────────────────    │
-│  ▸ ✕ github.com/you/pkg             2/3   120ms          │
-│      ✓ TestAdd                             0ms           │
-│      ✓ TestSubtract                        0ms           │
-│      ✕ TestFail                            0ms           │
-│          sample_test.go:18: this test always fails       │
-│  ────────────────────────────────────────────────────    │
-│  done                                                    │
-│                                                          │
-│  ↑↓ navigate  ⏎ expand  q quit                           │
-╰──────────────────────────────────────────────────────────╯
-```
+<p align="center">
+  <img src="doc/demo.gif" alt="tgo demo" width="800">
+</p>
 
 <br>
 

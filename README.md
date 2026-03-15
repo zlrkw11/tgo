@@ -43,24 +43,9 @@
 - **Progress bar** - visual pass/fail ratio at a glance
 - **Beautiful UI** - rounded borders, color-coded status icons, highlighted cursor
 
-```
-╭──────────────────────────────────────────────────────────╮
-│                         ⚡ TGO                            │
-│                  TEST UI built for Go                    │
-│                                                          │
-│  3 tests  ████████████████░░░░  2 passed  1 failed       │
-│  ────────────────────────────────────────────────────    │
-│  ▸ ✕ github.com/you/pkg             2/3   120ms          │
-│      ✓ TestAdd                             0ms           │
-│      ✓ TestSubtract                        0ms           │
-│      ✕ TestFail                            0ms           │
-│          sample_test.go:18: this test always fails       │
-│  ────────────────────────────────────────────────────    │
-│  done                                                    │
-│                                                          │
-│  ↑↓ navigate  ⏎ expand  q quit                           │
-╰──────────────────────────────────────────────────────────╯
-```
+<p align="center">
+  <img src="doc/demo.gif" alt="tgo demo" width="800">
+</p>
 <br>
 
 ## Installation
