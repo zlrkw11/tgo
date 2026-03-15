@@ -235,5 +235,8 @@ func (m model) View() string {
 		pillStyle.Render("r rerun") + " " +
 		pillStyle.Render("q quit")
 
-	return "\n" + boxStyle.Render(s) + "\n"
+	rendered := boxStyle.Render(s)
+
+	// place at top of terminal
+	return lipgloss.Place(0, m.height, lipgloss.Left, lipgloss.Top, rendered)
 }
