@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -9,26 +10,38 @@ import (
 
 func main() {
 	args := os.Args[1:]
-	if len(args) == 0 {
-		args = []string{"./..."}
+	watchMode := false
+
+	// parse --watch flag
+	var testArgs []string
+	for _, a := range args {
+		if a == "--watch" || a == "-w" {
+			watchMode = true
+		} else {
+			testArgs = append(testArgs, a)
+		}
+	}
+	if len(testArgs) == 0 {
+		testArgs = []string{"./..."}
 	}
 
 	ch := make(chan TestEvent)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	err := RunTests(args, ch)
+	err := RunTests(ctx, testArgs, ch)
 	if err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 
-	model := initialModel(ch)
-	p := tea.NewProgram(model, tea.WithAltScreen())
+	// load history
+	history, _ := LoadHistory()
+
+	m := initialModel(ch, testArgs, watchMode, history)
+	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
-
-	_ = fmt.Println
-	_ = os.Args
-	_ = tea.NewProgram
 }

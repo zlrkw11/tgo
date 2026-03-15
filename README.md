@@ -19,12 +19,27 @@
 
 <br>
 
+## Why tgo?
+
+<table>
+<tr>
+<td><h3>Rerun failed tests</h3>Press <code>r</code> to rerun a single failing test — no restart, no re-typing commands. Fix, rerun, repeat.</td>
+<td><h3>Watch mode</h3><code>tgo --watch</code> monitors your <code>.go</code> files and reruns tests automatically on save. Like Jest, but for Go.</td>
+<td><h3>Duration trends</h3>tgo tracks test speed across runs. If a test gets 1.5x slower, you'll see it flagged with <code>▲ +45ms</code>.</td>
+</tr>
+</table>
+
+<br>
+
 ## Features
 
 - **Real-time streaming** - watch tests pass and fail as they run
 - **Interactive navigation** - browse packages and tests with keyboard controls
 - **Expandable packages** - drill into any package to see individual test results
 - **Error summaries** - failed tests show a one-line error preview, press Enter for full details
+- **Rerun failed tests** - press `r` on any failed test to rerun it instantly without restarting
+- **Watch mode** - auto-reruns tests when `.go` files change
+- **Duration trends** - tracks test speed across runs, flags tests that got slower
 - **Progress bar** - visual pass/fail ratio at a glance
 - **Beautiful UI** - rounded borders, color-coded status icons, highlighted cursor
 
@@ -83,6 +98,10 @@ tgo ./pkg/auth/...
 
 # Run with default (./...) if no args given
 tgo
+
+# Watch mode — auto-rerun on file changes
+tgo --watch ./...
+tgo -w ./...
 ```
 
 ### Keyboard Controls
@@ -91,8 +110,16 @@ tgo
 |-----|--------|
 | `↑` `k` | Move up |
 | `↓` `j` | Move down |
-| `Enter` `Space` | Expand / collapse package |
+| `Enter` `Space` | Expand / collapse package or test errors |
+| `r` | Rerun the selected test |
 | `q` `Ctrl+C` | Quit |
+
+### Duration Trends
+
+tgo automatically records test durations to `~/.config/tgo/history.json`. After a few runs, you'll see trend indicators next to tests that got significantly slower or faster:
+
+- `▲ +45ms` — test got slower (red)
+- `▼ -12ms` — test got faster (green)
 
 <br>
 
