@@ -51,6 +51,12 @@
 
 ## 安装
 
+**Homebrew**
+
+```bash
+brew install zlrkw11/tap/tgo
+```
+
 **Go 1.22+**
 
 ```bash

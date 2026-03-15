@@ -1,0 +1,20 @@
+version: 2
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+brews:
+  - repository:
+      owner: zlrkw11
+      name: homebrew-tap
+    homepage: https://github.com/zlrkw11/tgo
+    description: A beautiful, interactive TUI for go test
+    license: MIT
