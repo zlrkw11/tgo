@@ -121,9 +121,16 @@ func (m model) buildRowGroups() []rowGroup {
 					testCursor = "  ▸ "
 				}
 
+				// show spinner if this test is being rerun
+				rerunKey := pkg.Name + "/" + t.Name
+				icon := statusIcon(t.Status)
+				if m.rerunning[rerunKey] {
+					icon = skipStyle.Render("⟳")
+				}
+
 				testLine := fmt.Sprintf("%s%s %-34s %dms",
 					testCursor,
-					statusIcon(t.Status),
+					icon,
 					t.Name,
 					t.Duration.Milliseconds(),
 				)
@@ -214,7 +221,9 @@ func (m model) View() string {
 
 	// footer
 	s += "  " + divider + "\n"
-	if m.done {
+	if m.rerunErr != "" {
+		s += failStyle.Render("  rerun error: "+m.rerunErr) + "\n"
+	} else if m.done {
 		s += dimStyle.Render("  done") + "\n"
 	} else {
 		s += dimStyle.Render("  running...") + "\n"

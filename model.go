@@ -21,6 +21,7 @@ type model struct {
 
 	// rerun
 	rerunning map[string]bool // "pkg/test" -> rerunning
+	rerunErr  string
 
 	// watch mode
 	watchMode bool
@@ -156,7 +157,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case rerunResultMsg:
 		key := msg.pkgName + "/" + msg.testName
 		delete(m.rerunning, key)
-		if msg.err == nil {
+		if msg.err != nil {
+			m.rerunErr = "rerun failed: " + msg.err.Error()
+		} else {
+			m.rerunErr = fmt.Sprintf("✓ rerun %s: %s", msg.testName, msg.result.Status)
 			m.updateTestResult(msg.pkgName, msg.testName, msg.result)
 		}
 		return m, nil
