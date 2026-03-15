@@ -4,31 +4,31 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// model is the bubbletea Model that holds all TUI state.
 type model struct {
-	packages []Package
-	events   []TestEvent
-	eventCh  chan TestEvent
-	cursor   int          // which row is selected
-	expanded map[int]bool // which packages are expanded
-	done     bool         // test run finished
-	err      error
+	packages    []Package
+	events      []TestEvent
+	eventCh     chan TestEvent
+	cursor      int
+	expanded    map[int]bool   // package index -> expanded
+	showErrors  map[string]bool // "pkgIdx/testIdx" -> show errors
+	done        bool
+	err         error
+	height      int
+	offset      int
 }
 
-// eventMsg wraps a TestEvent for the bubbletea message loop.
 type eventMsg TestEvent
-
-// doneMsg signals that the test run is complete.
 type doneMsg struct{}
 
 func initialModel(eventCh chan TestEvent) model {
 	return model{
-		eventCh:  eventCh,
-		expanded: make(map[int]bool),
+		eventCh:    eventCh,
+		expanded:   make(map[int]bool),
+		showErrors: make(map[string]bool),
+		height:     24,
 	}
 }
 
-// waitForEvent returns a command that waits for the next test event.
 func waitForEvent(ch chan TestEvent) tea.Cmd {
 	return func() tea.Msg {
 		ev, ok := <-ch
@@ -45,6 +45,11 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case tea.WindowSizeMsg:
+		m.height = msg.Height
+		m.adjustScroll()
+		return m, nil
 
 	case eventMsg:
 		m.events = append(m.events, TestEvent(msg))
@@ -70,22 +75,113 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case "enter", " ":
-			// toggle expand on package rows
-			pkgIdx := m.packageIndexAtCursor()
-			if pkgIdx >= 0 {
+			pkgIdx, testIdx := m.itemAtCursor()
+			if testIdx >= 0 {
+				// on a test row: toggle error output
+				key := testKey(pkgIdx, testIdx)
+				m.showErrors[key] = !m.showErrors[key]
+			} else if pkgIdx >= 0 {
+				// on a package row: toggle expand
 				m.expanded[pkgIdx] = !m.expanded[pkgIdx]
+			}
+		}
+
+		total := m.totalRows()
+		if total > 0 && m.cursor >= total {
+			m.cursor = total - 1
+		}
+	}
+
+	m.adjustScroll()
+	return m, nil
+}
+
+func testKey(pkgIdx, testIdx int) string {
+	return string(rune('0'+pkgIdx)) + "/" + string(rune('0'+testIdx))
+}
+
+// itemAtCursor returns (pkgIdx, testIdx). testIdx is -1 if cursor is on a package row.
+func (m model) itemAtCursor() (int, int) {
+	row := 0
+	for i, pkg := range m.packages {
+		if row == m.cursor {
+			return i, -1
+		}
+		row++
+		if m.expanded[i] {
+			for j := range pkg.Tests {
+				if row == m.cursor {
+					return i, j
+				}
+				row++
+			}
+		}
+	}
+	return -1, -1
+}
+
+func (m *model) adjustScroll() {
+	viewable := m.viewableRows()
+	if viewable < 1 {
+		viewable = 1
+	}
+
+	if m.cursor < m.offset {
+		m.offset = m.cursor
+	}
+
+	for m.displayLinesBetween(m.offset, m.cursor) >= viewable && m.offset < m.cursor {
+		m.offset++
+	}
+}
+
+func (m model) displayLinesBetween(startRow, endRow int) int {
+	groups := m.rowGroupSizes()
+	count := 0
+	for i := startRow; i <= endRow && i < len(groups); i++ {
+		count += groups[i]
+	}
+	return count
+}
+
+func (m model) rowGroupSizes() []int {
+	var sizes []int
+
+	for i, pkg := range m.packages {
+		sizes = append(sizes, 1)
+
+		if m.expanded[i] {
+			for j, t := range pkg.Tests {
+				lines := 1
+				if m.showErrors[testKey(i, j)] && t.Status == "fail" {
+					for _, o := range t.Output {
+						if o != "" && len(o) > 1 {
+							lines++
+						}
+					}
+				}
+				sizes = append(sizes, lines)
 			}
 		}
 	}
 
-	return m, nil
+	return sizes
 }
 
-// totalRows returns the total number of visible rows.
+func (m model) viewableRows() int {
+	headerLines := 8
+	footerLines := 6
+	viewable := m.height - headerLines - footerLines
+	if viewable < 3 {
+		viewable = 3
+	}
+	return viewable
+}
+
 func (m model) totalRows() int {
 	count := 0
 	for i, pkg := range m.packages {
-		count++ // package row
+		count++
 		if m.expanded[i] {
 			count += len(pkg.Tests)
 		}
@@ -93,7 +189,6 @@ func (m model) totalRows() int {
 	return count
 }
 
-// packageIndexAtCursor returns the package index if cursor is on a package row, or -1 if on a test row.
 func (m model) packageIndexAtCursor() int {
 	row := 0
 	for i, pkg := range m.packages {

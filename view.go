@@ -60,6 +60,106 @@ func progressBar(passed, failed, total int, width int) string {
 	return bar
 }
 
+// firstErrorLine extracts the first meaningful error message from test output.
+func firstErrorLine(output []string) string {
+	for _, l := range output {
+		trimmed := strings.TrimRight(l, "\n")
+		trimmed = strings.TrimSpace(trimmed)
+		if trimmed == "" || strings.HasPrefix(trimmed, "=== RUN") || strings.HasPrefix(trimmed, "--- FAIL") {
+			continue
+		}
+		// truncate if too long
+		if len(trimmed) > 50 {
+			trimmed = trimmed[:47] + "..."
+		}
+		return trimmed
+	}
+	return ""
+}
+
+// rowGroup is a navigable row + any extra display lines (e.g. error output).
+type rowGroup struct {
+	lines []string
+}
+
+// buildRowGroups collects all visible content grouped by navigable row.
+func (m model) buildRowGroups() []rowGroup {
+	var groups []rowGroup
+
+	row := 0
+	for i, pkg := range m.packages {
+		passed := 0
+		for _, t := range pkg.Tests {
+			if t.Status == "pass" {
+				passed++
+			}
+		}
+
+		cursor := "  "
+		if row == m.cursor {
+			cursor = "▸ "
+		}
+
+		line := fmt.Sprintf("%s%s %-36s %d/%d  %dms",
+			cursor,
+			statusIcon(pkg.Status),
+			pkg.Name,
+			passed,
+			len(pkg.Tests),
+			pkg.Duration.Milliseconds(),
+		)
+		if row == m.cursor {
+			line = hlStyle.Render(line)
+		}
+		groups = append(groups, rowGroup{lines: []string{line}})
+		row++
+
+		if m.expanded[i] {
+			for j, t := range pkg.Tests {
+				testCursor := "    "
+				if row == m.cursor {
+					testCursor = "  ▸ "
+				}
+
+				testLine := fmt.Sprintf("%s%s %-34s %dms",
+					testCursor,
+					statusIcon(t.Status),
+					t.Name,
+					t.Duration.Milliseconds(),
+				)
+
+				// append short error summary for failed tests
+				if t.Status == "fail" && !m.showErrors[testKey(i, j)] {
+					if msg := firstErrorLine(t.Output); msg != "" {
+						testLine += "  " + dimStyle.Render(msg)
+					}
+				}
+
+				if row == m.cursor {
+					testLine = hlStyle.Render(testLine)
+				}
+
+				g := rowGroup{lines: []string{testLine}}
+
+				// only show errors when user explicitly toggles this test
+				if m.showErrors[testKey(i, j)] && t.Status == "fail" && len(t.Output) > 0 {
+					for _, l := range t.Output {
+						trimmed := strings.TrimRight(l, "\n")
+						if trimmed != "" && !strings.HasPrefix(trimmed, "=== RUN") && !strings.HasPrefix(trimmed, "--- FAIL") {
+							g.lines = append(g.lines, failStyle.Render("        "+trimmed))
+						}
+					}
+				}
+
+				groups = append(groups, g)
+				row++
+			}
+		}
+	}
+
+	return groups
+}
+
 func (m model) View() string {
 	s := titleStyle.Render("⚡ TGO") + "\n"
 	s += subtitleStyle.Render("TEST UI built for Go") + "\n\n"
@@ -89,64 +189,27 @@ func (m model) View() string {
 	s += summary + "\n"
 	s += "  " + divider + "\n"
 
-	// package list
-	row := 0
-	for i, pkg := range m.packages {
-		passed := 0
-		for _, t := range pkg.Tests {
-			if t.Status == "pass" {
-				passed++
-			}
+	// scrollable package/test list
+	groups := m.buildRowGroups()
+	viewable := m.viewableRows()
+	end := m.offset + viewable
+	if end > len(groups) {
+		end = len(groups)
+	}
+
+	if m.offset > 0 {
+		s += dimStyle.Render(fmt.Sprintf("  ↑ %d more above", m.offset)) + "\n"
+	}
+
+	for _, g := range groups[m.offset:end] {
+		for _, line := range g.lines {
+			s += line + "\n"
 		}
+	}
 
-		cursor := "  "
-		if row == m.cursor {
-			cursor = "▸ "
-		}
-
-		line := fmt.Sprintf("%s%s %-36s %d/%d  %dms",
-			cursor,
-			statusIcon(pkg.Status),
-			pkg.Name,
-			passed,
-			len(pkg.Tests),
-			pkg.Duration.Milliseconds(),
-		)
-		if row == m.cursor {
-			line = hlStyle.Render(line)
-		}
-		s += line + "\n"
-		row++
-
-		if m.expanded[i] {
-			for _, t := range pkg.Tests {
-				testCursor := "    "
-				if row == m.cursor {
-					testCursor = "  ▸ "
-				}
-
-				testLine := fmt.Sprintf("%s%s %-34s %dms",
-					testCursor,
-					statusIcon(t.Status),
-					t.Name,
-					t.Duration.Milliseconds(),
-				)
-				if row == m.cursor {
-					testLine = hlStyle.Render(testLine)
-				}
-				s += testLine + "\n"
-				row++
-
-				if t.Status == "fail" && len(t.Output) > 0 {
-					for _, line := range t.Output {
-						trimmed := strings.TrimRight(line, "\n")
-						if trimmed != "" && !strings.HasPrefix(trimmed, "=== RUN") && !strings.HasPrefix(trimmed, "--- FAIL") {
-							s += failStyle.Render("        "+trimmed) + "\n"
-						}
-					}
-				}
-			}
-		}
+	remaining := len(groups) - end
+	if remaining > 0 {
+		s += dimStyle.Render(fmt.Sprintf("  ↓ %d more below", remaining)) + "\n"
 	}
 
 	// footer

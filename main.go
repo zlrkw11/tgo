@@ -22,7 +22,7 @@ func main() {
 	}
 
 	model := initialModel(ch)
-	p := tea.NewProgram(model)
+	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error: ", err)
 		os.Exit(1)

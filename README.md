@@ -24,7 +24,7 @@
 - **Real-time streaming** - watch tests pass and fail as they run
 - **Interactive navigation** - browse packages and tests with keyboard controls
 - **Expandable packages** - drill into any package to see individual test results
-- **Inline errors** - failed test output shown right where you need it
+- **Error summaries** - failed tests show a one-line error preview, press Enter for full details
 - **Progress bar** - visual pass/fail ratio at a glance
 - **Beautiful UI** - rounded borders, color-coded status icons, highlighted cursor
 
