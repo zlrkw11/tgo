@@ -220,15 +220,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// ---------------------------------------------------------------------------
-// TODO: 实现 updateTestResult — 把 rerun 的结果更新到 model 里
-// ---------------------------------------------------------------------------
-//  1. 遍历 m.packages，找到 Name == pkgName 的包
-//  2. 在那个包里遍历 Tests，找到 Name == testName 的测试
-//  3. 用 result 替换那个测试: m.packages[i].Tests[j] = result
-//  4. 重新计算包的状态:
-//     - 遍历所有 tests，如果没有 fail 的 → pkg.Status = "pass"
-//     - 否则 pkg.Status = "fail"
 func (m *model) updateTestResult(pkgName, testName string, result TestResult) {
 	allPass := true
 	for i := range m.packages {
