@@ -110,6 +110,8 @@ tgo -w ./...
 |-----|--------|
 | `↑` `k` | Move up |
 | `↓` `j` | Move down |
+| `g` `Home` | Jump to top |
+| `G` `End` | Jump to bottom |
 | `Enter` `Space` | Expand / collapse package or test errors |
 | `r` | Rerun the selected test |
 | `q` `Ctrl+C` | Quit |

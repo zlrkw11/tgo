@@ -221,7 +221,9 @@ func (m model) View() string {
 	}
 	s += "\n"
 	s += "  " + pillStyle.Render("↑↓ navigate") + " " +
+		pillStyle.Render("g/G top/bottom") + " " +
 		pillStyle.Render("⏎ expand") + " " +
+		pillStyle.Render("r rerun") + " " +
 		pillStyle.Render("q quit")
 
 	return "\n" + boxStyle.Render(s) + "\n"

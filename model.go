@@ -177,6 +177,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < totalRows-1 {
 				m.cursor++
 			}
+		case "g", "home":
+			m.cursor = 0
+			m.offset = 0
+		case "G", "end":
+			if totalRows > 0 {
+				m.cursor = totalRows - 1
+			}
 		case "enter", " ":
 			pkgIdx, testIdx := m.itemAtCursor()
 			if testIdx >= 0 {
