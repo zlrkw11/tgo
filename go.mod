@@ -1,4 +1,4 @@
-module github.com/rayzhao/tgo
+module github.com/zlrkw11/tgo
 
 go 1.26.1
 
