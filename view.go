@@ -46,16 +46,27 @@ func statusIcon(status string) string {
 	}
 }
 
-func progressBar(passed, failed, total int, width int) string {
+func progressBar(passed, failed, skipped, total int, width int) string {
 	if total == 0 {
 		return dimStyle.Render(strings.Repeat("░", width))
 	}
+	done := passed + failed + skipped
 	passWidth := passed * width / total
 	failWidth := failed * width / total
-	remaining := width - passWidth - failWidth
+	skipWidth := skipped * width / total
+	// fix rounding: give leftover to the filled portion
+	filled := passWidth + failWidth + skipWidth
+	if done == total && filled < width {
+		failWidth += width - filled
+	}
+	remaining := width - passWidth - failWidth - skipWidth
+	if remaining < 0 {
+		remaining = 0
+	}
 
 	bar := passStyle.Render(strings.Repeat("█", passWidth)) +
 		failStyle.Render(strings.Repeat("█", failWidth)) +
+		skipStyle.Render(strings.Repeat("█", skipWidth)) +
 		dimStyle.Render(strings.Repeat("░", remaining))
 	return bar
 }
@@ -175,6 +186,7 @@ func (m model) View() string {
 	totalTests := 0
 	totalPassed := 0
 	totalFailed := 0
+	totalSkipped := 0
 	for _, pkg := range m.packages {
 		for _, t := range pkg.Tests {
 			totalTests++
@@ -183,15 +195,20 @@ func (m model) View() string {
 				totalPassed++
 			case "fail":
 				totalFailed++
+			case "skip":
+				totalSkipped++
 			}
 		}
 	}
 
 	summary := fmt.Sprintf("  %d tests  ", totalTests)
-	summary += progressBar(totalPassed, totalFailed, totalTests, 20)
+	summary += progressBar(totalPassed, totalFailed, totalSkipped, totalTests, 20)
 	summary += "  " + passStyle.Render(fmt.Sprintf("%d passed", totalPassed))
 	if totalFailed > 0 {
 		summary += "  " + failStyle.Render(fmt.Sprintf("%d failed", totalFailed))
+	}
+	if totalSkipped > 0 {
+		summary += "  " + skipStyle.Render(fmt.Sprintf("%d skipped", totalSkipped))
 	}
 	s += summary + "\n"
 	s += "  " + divider + "\n"
